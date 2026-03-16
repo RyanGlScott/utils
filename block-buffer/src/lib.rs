@@ -162,7 +162,7 @@ where
             let (left, right) = input.split_at(rem);
             input = right;
             self.buffer[pos..].copy_from_slice(left);
-            compress(slice::from_ref(&self.buffer));
+            compress(&[self.buffer.clone()]);
         }
 
         let (blocks, leftover) = Kind::split_blocks(input);
