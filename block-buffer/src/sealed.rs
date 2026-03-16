@@ -1,4 +1,6 @@
+extern crate alloc;
 use super::{ArrayLength, Block};
+use alloc::vec::Vec;
 use core::slice;
 
 /// Sealed trait for buffer kinds.
@@ -25,7 +27,7 @@ impl Sealed for super::Eager {
         // SAFETY: we guarantee that created slices do not point
         // outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const Block<N>;
+            let blocks_ptr = blocks_from_bytes(data).as_ptr();
             let tail_ptr = data.as_ptr().add(blocks_len);
             (
                 slice::from_raw_parts(blocks_ptr, nb),
@@ -56,7 +58,7 @@ impl Sealed for super::Lazy {
         // SAFETY: we guarantee that created slices do not point
         // outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const Block<N>;
+            let blocks_ptr = blocks_from_bytes(data).as_ptr();
             let tail_ptr = data.as_ptr().add(blocks_len);
             (
                 slice::from_raw_parts(blocks_ptr, nb),
@@ -64,4 +66,21 @@ impl Sealed for super::Lazy {
             )
         }
     }
+}
+
+/// Convert a slice of bytes to a slice of Blocks. PRECONDITION: the argument
+/// slice's length must be a multiple of `N`. If this is not the case, this
+/// function will panic.
+///
+/// This is essentially a much hackier version of `slice::align_to` that does
+/// not preserve aliasing between the input and output slices. The only reason
+/// this exists is to make it easier for Crucible to simulate.
+fn blocks_from_bytes<'a, N: ArrayLength<u8>>(s: &'a [u8]) -> &'a [Block<N>] {
+    s.chunks_exact(N::USIZE)
+        .map(|chunk: &[u8]| {
+            let br: &Block<N> = chunk.into();
+            br.clone()
+        })
+        .collect::<Vec<Block<N>>>()
+        .leak()
 }
