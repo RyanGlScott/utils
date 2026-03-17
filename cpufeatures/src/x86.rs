@@ -12,6 +12,7 @@
 #[doc(hidden)]
 macro_rules! __unless_target_features {
     ($($tf:tt),+ => $body:expr ) => {{
+        /*
         #[cfg(not(all($(target_feature=$tf,)*)))]
         {
             #[cfg(not(target_env = "sgx"))]
@@ -24,6 +25,8 @@ macro_rules! __unless_target_features {
 
         #[cfg(all($(target_feature=$tf,)*))]
         true
+        */
+        false
     }};
 }
 
